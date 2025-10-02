@@ -253,7 +253,6 @@ pub fn main() !void {
     };
 
     var status_message: []const u8 = "Press 'e' to edit, 's' to save, 'q' to quit";
-    var error_message: []const u8 = "";
 
     // Main event loop
     while (true) {
@@ -261,8 +260,6 @@ pub fn main() !void {
 
         switch (event) {
             .key_press => |key| {
-                // Clear error message on any key
-                error_message = "";
 
                 switch (editor.mode) {
                     .normal => {
@@ -278,24 +275,18 @@ pub fn main() !void {
                             break;
                         } else if (key.matches('s', .{})) {
                             editor.saveFile() catch |err| {
-                                error_message = try std.fmt.allocPrint(alloc, "Error saving: {}", .{err});
-                                defer alloc.free(error_message);
-                                continue;
+                                status_message = "Error saving file!";
+                                log.err("Error saving: {}", .{err});
                             };
-                            status_message = "File saved!";
+                            if (editor.modified == false) {
+                                status_message = "File saved!";
+                            }
                         } else if (key.matches('e', .{})) {
                             if (editor.entries.items.len > 0) {
                                 editor.mode = .edit;
-                                const current_value = editor.entries.items[editor.selected_row].value;
                                 editor.text_input.clearAndFree();
-                                for (current_value) |c| {
-                                    try editor.text_input.update(.{ .key_press = .{
-                                        .codepoint = c,
-                                        .text = &[_]u8{c},
-                                        .shifted_codepoint = c,
-                                        .base_layout_codepoint = c,
-                                    } });
-                                }
+                                // Note: The text input will be empty, ready for new value
+                                status_message = "Edit mode: type value and press Enter to save, Esc to cancel";
                             }
                         } else if (key.matches('j', .{}) or key.matches(vaxis.Key.down, .{})) {
                             if (editor.selected_row < editor.entries.items.len - 1) {
@@ -444,22 +435,28 @@ pub fn main() !void {
             .style = .{ .reverse = true },
         }, .{});
 
-        // Draw error message if any
-        if (error_message.len > 0) {
-            const error_win = win.child(.{
-                .x_off = 0,
-                .y_off = win.height - 3,
-                .width = win.width,
-                .height = 1,
-            });
-            _ = try error_win.printSegment(.{
-                .text = error_message,
-                .style = .{ .fg = .{ .index = 1 } },
-            }, .{});
-        }
-
         // Draw edit input if in edit mode
         if (editor.mode == .edit) {
+            // Show which field is being edited
+            if (editor.selected_row < editor.entries.items.len) {
+                const entry = &editor.entries.items[editor.selected_row];
+                const edit_label_win = win.child(.{
+                    .x_off = 2,
+                    .y_off = win.height - 3,
+                    .width = win.width - 4,
+                    .height = 1,
+                });
+                const label = if (entry.key.len > 0)
+                    try std.fmt.allocPrint(alloc, "Editing '{s}' (current: {s})", .{ entry.key, entry.value })
+                else
+                    try std.fmt.allocPrint(alloc, "Editing line (current: {s})", .{entry.value});
+                defer alloc.free(label);
+                _ = try edit_label_win.printSegment(.{
+                    .text = label,
+                    .style = .{ .fg = .{ .index = 3 } },
+                }, .{});
+            }
+
             const edit_win = win.child(.{
                 .x_off = 2,
                 .y_off = win.height - 2,
