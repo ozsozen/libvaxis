@@ -48,7 +48,13 @@ pub fn main() !void {
 
     // Parse the file into entries
     var entries = std.ArrayList(ZonEntry).init(alloc);
-    defer entries.deinit();
+    defer {
+        for (entries.items) |entry| {
+            alloc.free(entry.key);
+            alloc.free(entry.value);
+        }
+        entries.deinit();
+    }
     try parseZonFile(alloc, file_content, &entries);
 
     // Initialize TUI

@@ -42,9 +42,27 @@ zig build example -Dexample=zon_editor -- examples/sample.zon
 
 This example is designed to work with Zig 0.15.1 and above, using the modern `io` abstraction:
 
-- Uses `std.fs.cwd().readFileAlloc()` for reading files
-- Uses `std.fs.cwd().createFile()` for writing files
+- Uses `std.fs.cwd().readFileAlloc()` for reading files with proper error handling
+- Uses `std.fs.cwd().createFile()` for atomic file writing
 - Compatible with Zig master branch
+- Uses standard library allocators throughout
+- No deprecated APIs or functions
+
+The code follows Zig 0.15.1+ idioms:
+```zig
+// Reading a file
+const file_content = try std.fs.cwd().readFileAlloc(
+    alloc, 
+    filepath, 
+    1024 * 1024  // max size
+);
+defer alloc.free(file_content);
+
+// Writing a file
+const file = try std.fs.cwd().createFile(filepath, .{});
+defer file.close();
+try file.writeAll(new_content.items);
+```
 
 ### Parsing Approach
 
@@ -70,15 +88,34 @@ The editor is built using:
 
 ## Example Output
 
-```
-ZON Editor - build.zig.zon
-↑/↓: Navigate | Enter/e: Edit | Ctrl+S: Save | Ctrl+C: Quit
+When you run the editor, you'll see a screen like this:
 
-  name: "vaxis"
-  version: "0.5.1"
-  minimum_zig_version: "0.15.1"
-    url: "https://github.com/..."
-    hash: "zigimg-0.1.0-8_eo2v..."
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ZON Editor - build.zig.zon                                      │
+│ ↑/↓: Navigate | Enter/e: Edit | Ctrl+S: Save | Ctrl+C: Quit    │
+│                                                                 │
+│   name: "vaxis"                                                 │
+│   version: "0.5.1"                                             │
+│ > minimum_zig_version: "0.15.1"            [← selected row]    │
+│     url: "https://github.com/..."                              │
+│     hash: "zigimg-0.1.0-8_eo2v..."                            │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-The selected row is highlighted, and pressing Enter allows you to edit the value inline.
+The selected row is highlighted (shown with `>` here), and pressing Enter allows you to edit the value inline:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ZON Editor - build.zig.zon (modified)                           │
+│ Enter: Save | Esc: Cancel                                       │
+│                                                                 │
+│   name: "vaxis"                                                 │
+│   version: "0.5.1"                                             │
+│ > minimum_zig_version: "0.15.2"█           [← editing mode]    │
+│     url: "https://github.com/..."                              │
+│     hash: "zigimg-0.1.0-8_eo2v..."                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Press Enter to save the edit, Esc to cancel, and Ctrl+S to write changes to disk.
