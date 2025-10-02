@@ -131,7 +131,9 @@ pub fn main() !void {
                         text_input.clearAndFree();
                     } else if (key.matches(vaxis.Key.enter, .{})) {
                         // Save the edit
-                        const new_value = try alloc.dupe(u8, text_input.sliceToCursor(text_input.buf.items.len));
+                        var buf: [1024]u8 = undefined;
+                        const input_slice = text_input.sliceToCursor(&buf);
+                        const new_value = try alloc.dupe(u8, input_slice);
                         const entry_key = entries.items[selected_row].key;
                         
                         // Free old value if exists
