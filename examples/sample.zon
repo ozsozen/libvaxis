@@ -1,0 +1,20 @@
+.{
+    .name = "example",
+    .version = "0.1.0",
+    .minimum_zig_version = "0.15.1",
+    .dependencies = .{
+        .foo = .{
+            .url = "https://example.com/foo.tar.gz",
+            .hash = "1220abcdef1234567890",
+        },
+        .bar = .{
+            .url = "https://example.com/bar.tar.gz",
+            .hash = "1220fedcba0987654321",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
