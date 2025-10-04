@@ -1,0 +1,21 @@
+.{
+    .name = .test_project,
+    .version = "0.1.0",
+    .minimum_zig_version = "0.15.1",
+    .dependencies = .{
+        .vaxis = .{
+            .url = "https://github.com/ozsozen/libvaxis/archive/main.tar.gz",
+            .hash = "1234567890abcdef",
+        },
+        .zigimg = .{
+            .url = "https://github.com/zigimg/zigimg/archive/main.tar.gz",
+            .hash = "abcdef1234567890",
+        },
+    },
+    .paths = .{
+        "LICENSE",
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
